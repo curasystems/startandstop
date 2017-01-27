@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Safely perform sync and async steps when starting and stopping servers",
   "main": "dist/startandstop.js",
-  "module": "dist/startandstop.es6.js",
+  "module": "dist/startandstop.es.js",
   "scripts": {
     "build": "rimraf dist && npm run build:cjs && npm run build:es6",
     "build:watch": "rimraf dist && rollup --watch -c -o dist/startandstop.js -f iife",

@@ -7,7 +7,7 @@ test('New it and run with normal async functions run in parallel', (t) => {
   const sas = startAndStop.new([
     { name: 'step1', start: step },
     { name: 'step2', start: step },
-    { name: 'step3', start: step }    
+    { name: 'step3', start: step }
   ])
 
   sas.start(() => {
@@ -39,7 +39,7 @@ test('start callback called after all steps completed ', (t) => {
 
   t.equal(completedSteps, 0)
 })
-
+ 
 test('a new array signals a new section to run after previous steps ', (t) => {
   t.plan(3)
 
@@ -53,7 +53,7 @@ test('a new array signals a new section to run after previous steps ', (t) => {
       { name: 'step3', start: runStep3 }    
     ]
   ])
-  
+   
   function runStep3(cb) {
     t.equal(completedSteps, 1 + 2)
     completedSteps |= 4
