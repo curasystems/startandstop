@@ -10,6 +10,7 @@ const events = require('events');
                
                    
                   
+             
  
 
                                       
@@ -179,7 +180,10 @@ class StartAndStop extends events.EventEmitter {
 
       setImmediate(() => {
         this.emit(`step-${functionName}-begin`, step);
-        fn(error => onStepFinished(error, step));
+
+        const thisInstanceForStepFunction = step.this || this;
+
+        fn.call(thisInstanceForStepFunction, error => onStepFinished(error, step));
       });
     });
 

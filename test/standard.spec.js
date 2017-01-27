@@ -206,7 +206,6 @@ test('run stop functions when stopping again ', (t) => {
   })
 })
 
-
 test('report error in start callback when a step emits an error', (t) => {
   t.plan(7)
 
@@ -318,4 +317,27 @@ test('when started already raises exception', (t) => {
   t.throws(() => {
     sas.start()
   })
+})
+
+test('step functions can be bound to an instance', (t) => {
+  t.plan(1)
+
+  const instance = {}
+
+  /* eslint-disable no-bitwise */
+  const sas = startAndStop.new([
+    {
+      name: 'step1',
+      this: instance,
+      start: function startStepFunction(cb) {
+        t.equal(this, instance)
+        cb()
+      }
+    },
+    [ 
+      { name: 'step2' }
+    ]
+  ])
+  /* eslint-enable */
+  sas.start()
 })

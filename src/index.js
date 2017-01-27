@@ -8,6 +8,7 @@ declare interface Step {
   name: string;
   start?: Function;
   stop?: Function;
+  this?: any;
 }
 
 declare interface StepExecutionError {
@@ -177,7 +178,10 @@ export default class StartAndStop extends events.EventEmitter {
 
       setImmediate(() => {
         this.emit(`step-${functionName}-begin`, step)
-        fn(error => onStepFinished(error, step))
+
+        const thisInstanceForStepFunction = step.this || this
+
+        fn.call(thisInstanceForStepFunction, error => onStepFinished(error, step))
       })
     })
 
