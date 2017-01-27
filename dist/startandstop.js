@@ -26,6 +26,10 @@ const events = require('events');
 
 class StartAndStop extends events.EventEmitter {
   
+               
+              
+               
+                
               
 
   static new(config      ) {
@@ -35,15 +39,58 @@ class StartAndStop extends events.EventEmitter {
   constructor(config      ) {
     super();
 
+    this.starting = this.stopping = this.started = null;
+    this.stopped = true;
+
     this.config = config;
   }
 
   start(cb            ) {
-    this._run(this.config, 'start', 'started', cb);
+    if (this.starting) {
+      this.once('started', cb);
+      return
+    }
+
+    if (this.stopping) {
+      this.once('run-completed', () => {
+        this.start(cb);
+      });
+      return
+    }
+
+    this.starting = true;
+    this._run(this.config, 'start', 'started', (error) => {
+      this.starting = false;
+      this.started = error == null;
+
+      if (cb) {
+        cb(error);
+      }
+    });
   }
 
   stop(cb            ) {
-    this._run(this.config, 'stop', 'stopped', cb);
+    if (this.stopping) {
+      this.once('stopped', cb);
+      return
+    }
+
+    if (this.starting) {
+      this.once('run-completed', () => {
+        this.stop(cb);
+      });
+      return
+    }
+    
+    this.stopping = true;
+    this._run(this.config, 'stop', 'stopped', (error) => {
+      this.stopping = false;
+      this.stopped = error == null;
+
+      if (cb) {
+        cb(error);
+      }
+    });
   }
 
   _run(steps      , functionName       , finishEventName       , cb            ) {
@@ -54,11 +101,11 @@ class StartAndStop extends events.EventEmitter {
       } else {
         this.emit(finishEventName, error);
       }
+      
+      cb(error);
 
       setImmediate(() => {
-        if (cb) {
-          cb(error);
-        }
+        this.emit('run-completed', error);
       });
     });
   }
@@ -130,6 +177,16 @@ class StartAndStop extends events.EventEmitter {
           this.emit(`step-${functionName}-begin`, step);
           fn(error => onStepFinished(error, step));
         });
+      } else {
+        this.emit(`step-${functionName}-begin`, step);
+        this.emit(`step-${functionName}-end`, step);
+        this.emit(`step-${finishEventName}`, step);
+
+        stepsInProgress -= 1;
+        
+        if (stepsInProgress === 0) {
+          onAllStepsFinished();  
+        }
       }
     });
 
