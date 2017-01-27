@@ -341,3 +341,41 @@ test('step functions can be bound to an instance', (t) => {
   /* eslint-enable */
   sas.start()
 })
+
+test.only('stop tests are executed in reverse order', (t) => {
+  t.plan(7)
+
+  const expectedSteps = ['step5', 'step4', 'step3s', 'step3', 'step2', 'step1']
+
+  /* eslint-disable no-bitwise */
+  const sas = startAndStop.new([
+    { name: 'step1', stop: cb => runStep(15, cb) },
+    { name: 'step2', stop: cb => runStep(10, cb) },
+    [
+      { name: 'step3', stop: cb => runStep(2, cb) },
+      [
+        { name: 'step3s', stop: cb => runStep(5, cb) },
+      ],
+    ],
+    { name: 'step4', stop: cb => runStep(20, cb) },
+    { name: 'step5', stop: cb => runStep(10, cb) },
+  ])
+  
+  function runStep(delay, cb) {
+    setTimeout(cb, delay)
+  }
+
+  /* eslint-enable */
+
+  sas.start(() => {
+    sas.stop(() => {
+      t.equal(expectedSteps.length, 0)
+    })
+  })
+
+  sas.on('step-stopped', (step) => {
+    console.log( 'stopped', step.name )
+    const nextExpectedStep = expectedSteps.shift()
+    t.equal(step.name, nextExpectedStep)
+  })
+})

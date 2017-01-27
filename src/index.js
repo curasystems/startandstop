@@ -51,8 +51,25 @@ export default class StartAndStop extends events.EventEmitter {
   }
 
   stop(cb:RunCallback) {
+    const reversedConfiguration = this._reverseSteps(this.config)
+
     this.started = false
-    this._runGuard(this.config, 'starting', 'stopping', 'stop', 'stopped', cb)
+    this._runGuard(reversedConfiguration, 'starting', 'stopping', 'stop', 'stopped', cb)
+  }
+
+  _reverseSteps(steps:Steps) {
+    const reversedSteps = []
+
+    for (let i = steps.length - 1; i >= 0; i -= 1) {
+      const currentStep = steps[i]
+      if (Array.isArray(currentStep)) {
+        reversedSteps.push(this._reverseSteps(currentStep))
+      } else {
+        reversedSteps.push(currentStep)
+      }
+    }
+
+    return reversedSteps
   }
 
   _runGuard(steps:Steps,
@@ -81,7 +98,7 @@ export default class StartAndStop extends events.EventEmitter {
     }
     
     indexableThis[progressVar] = true
-    this._run(this.config, functionName, finishEventName, (error) => {
+    this._run(steps, functionName, finishEventName, (error) => {
       indexableThis[progressVar] = false
       indexableThis[finishEventName] = error == null
 
