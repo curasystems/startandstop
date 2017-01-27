@@ -25,16 +25,19 @@ test('start callback called after all steps completed ', (t) => {
 
   let completedSteps = 0
 
+  /* eslint-disable no-bitwise */
   const sas = startAndStop.new([
-    { name: 'step1', start: (cb) => { completedSteps += 1; cb() } },
-    { name: 'step2', start: (cb) => { completedSteps += 2; cb() } },
-    { name: 'step3', start: (cb) => { completedSteps += 4; cb() } }    
+    { name: 'step1', start: (cb) => { completedSteps |= 1; cb() } },
+    { name: 'step2', start: (cb) => { completedSteps |= 2; cb() } },
+    { name: 'step3', start: (cb) => { completedSteps |= 4; cb() } }    
   ])
+  /* eslint-enable */
 
   sas.start(() => {
     t.equal(completedSteps, 1 + 2 + 4)
   })
 })
+
 
 test('start callback called after all steps completed asynchronously ', (t) => {
   t.plan(1)
