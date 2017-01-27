@@ -214,10 +214,6 @@ export default class StartAndStop extends events.EventEmitter {
         }
       })
     }
-
-    function hallo() : number {
-      return 'test'
-    }
   }
 }
 

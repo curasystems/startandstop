@@ -216,8 +216,6 @@ class StartAndStop extends events.EventEmitter {
         }
       });
     }
-
-    
   }
 }
 
