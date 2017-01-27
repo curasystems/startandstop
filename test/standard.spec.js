@@ -238,7 +238,7 @@ test('report error in start callback when a step emits an error', (t) => {
     t.deepEqual(err.failures[0].step, err.failure.step)
   })
 
-  sas.on('error', (error) => {
+  sas.on('error', () => {
     t.pass('Error event emitted')
   })
 })
