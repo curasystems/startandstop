@@ -170,25 +170,21 @@ class StartAndStop extends events.EventEmitter {
 
     nextStepsInParallel.forEach((step) => {
       // this.emit(`starting-${step.name}`)
-      const fn          = (step    )[functionName];
+      let fn          = (step    )[functionName];
 
-      if (fn) {
-        setImmediate(() => {
-          this.emit(`step-${functionName}-begin`, step);
-          fn(error => onStepFinished(error, step));
-        });
-      } else {
-        this.emit(`step-${functionName}-begin`, step);
-        this.emit(`step-${functionName}-end`, step);
-        this.emit(`step-${finishEventName}`, step);
-
-        stepsInProgress -= 1;
-        
-        if (stepsInProgress === 0) {
-          onAllStepsFinished();  
-        }
+      if (!fn) {
+        fn = nopStep;
       }
+
+      setImmediate(() => {
+        this.emit(`step-${functionName}-begin`, step);
+        fn(error => onStepFinished(error, step));
+      });
     });
+
+    function nopStep(cb) {
+      setImmediate(cb);
+    }
 
     function onStepFinished(error, step     ) {
       self.emit(`step-${functionName}-end`, step);
