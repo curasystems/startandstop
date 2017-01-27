@@ -47,8 +47,15 @@ class StartAndStop extends events.EventEmitter {
   }
 
   _run(steps      , functionName       , finishEventName       , cb            ) {
-    this._runSteps(steps, functionName, (error) => {
-      this.emit(finishEventName);
+    this._runSteps(steps, functionName, finishEventName, (error) => {
+      
+      if (error) {
+        this.emit('error', error);        
+        this.emit(`${functionName}-error`, error);
+      } else {
+        this.emit(finishEventName, error);
+      }
+
       setImmediate(() => {
         if (cb) {
           cb(error);
@@ -57,21 +64,26 @@ class StartAndStop extends events.EventEmitter {
     });
   }
     
-  _runSteps(steps      , functionName       , cb            ) {
+  _runSteps(steps      , functionName       , finishEventName       , cb            ) {
     const nextParallelSteps = this._gatherParallelSteps(steps);
     const remainingSteps = steps.slice(nextParallelSteps.length);  
 
-    this._runNextStepsInParallel(nextParallelSteps, functionName, (error) => {
+    this._runNextStepsInParallel(nextParallelSteps, functionName, finishEventName, (error) => {
+      if (error) {
+        cb(error);
+        return
+      }
+      
       if (remainingSteps.length > 0) {
         const subSteps       = (remainingSteps[0]    );
         const subsequentSteps = remainingSteps.slice(1);
         
-        this._runSteps(subSteps, functionName, (innerStepsError) => {
+        this._runSteps(subSteps, functionName, finishEventName, (innerStepsError) => {
           if (innerStepsError) {
             cb(innerStepsError);
             return
           }
-          this._runSteps(subsequentSteps, functionName, cb);
+          this._runSteps(subsequentSteps, functionName, finishEventName, cb);
         });
       } else {
         cb(error);
@@ -95,7 +107,11 @@ class StartAndStop extends events.EventEmitter {
     return stepsForParallelExecution
   }
 
-  _runNextStepsInParallel(config       , functionName       , runStepsCallback            ) {
+  _runNextStepsInParallel(config       ,
+    functionName       ,
+    finishEventName       ,
+    runStepsCallback            ) {
+    const self = this;
     const nextStepsInParallel = config;
 
     let stepsInProgress = nextStepsInParallel.length;
@@ -112,14 +128,20 @@ class StartAndStop extends events.EventEmitter {
 
       if (fn) {
         setImmediate(() => {
+          this.emit(`step-${functionName}-begin`, step);
           fn(error => onStepFinished(error, step));
         });
       }
     });
 
     function onStepFinished(error, step     ) {
+      self.emit(`step-${functionName}-end`, step);
+      
       if (error) {
         failures.push({ step, error });
+        self.emit(`step-${functionName}-error`, error, step);
+      } else {
+        self.emit(`step-${finishEventName}`, step);
       }
 
       stepsInProgress -= 1;

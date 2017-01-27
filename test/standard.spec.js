@@ -40,7 +40,6 @@ test('start callback called after all steps completed ', (t) => {
   t.equal(completedSteps, 0)
 })
 
-
 test('a new array signals a new section to run after previous steps ', (t) => {
   t.plan(3)
 
@@ -55,7 +54,6 @@ test('a new array signals a new section to run after previous steps ', (t) => {
     ]
   ])
   
-
   function runStep3(cb) {
     t.equal(completedSteps, 1 + 2)
     completedSteps |= 4
@@ -207,8 +205,8 @@ test('run stop functions when stopping again ', (t) => {
 })
 
 
-test('emit error when a step emits an error', (t) => {
-  t.plan(6)
+test('report error in start callback when a step emits an error', (t) => {
+  t.plan(7)
 
   const sas = startAndStop.new([
     { name: 'step1', start: step, stop: stopStep },
@@ -239,5 +237,26 @@ test('emit error when a step emits an error', (t) => {
     t.equals(err.failures.length, 1)
     t.deepEqual(err.failures[0].step, err.failure.step)
   })
+
+  sas.on('error', (error) => {
+    t.pass('Error event emitted')
+  })
 })
 
+test('errors stop execution of next steps', (t) => {
+  t.plan(1)
+
+  /* eslint-disable no-bitwise */
+  const sas = startAndStop.new([
+    { name: 'step1', start: cb => cb('failed') },
+    [ 
+      { name: 'step2', start: () => t.fail('should not have been called') }
+    ]
+  ])
+  /* eslint-enable */
+  sas.start((error) => {
+    t.notLooseEqual(error, null)
+  })
+
+  sas.on('error', () => {})
+})
