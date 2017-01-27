@@ -2,14 +2,14 @@ const test = require('tape')
 const startAndStop = require('..')
 
 test('New it and run with normal async functions run in parallel', (t) => {
-  t.plan(4)
+  t.plan(1 + 3)
 
   const sas = startAndStop.new([
     { name: 'step1', start: step },
     { name: 'step2', start: step },
     { name: 'step3', start: step }
   ])
-
+  
   sas.start(() => {
     t.pass('start completed')
   })
@@ -68,21 +68,23 @@ test('a new array signals a new section to run after previous steps ', (t) => {
   t.equal(completedSteps, 0)
 })
 
-test('execution continous AFTER the array again', (t) => {
+test('execution continuous AFTER the array again', (t) => {
   t.plan(5)
 
   let completedSteps = 0
 
   /* eslint-disable no-bitwise */
-  const sas = startAndStop.new([
-    { name: 'step1', start: (cb) => { setTimeout(() => { completedSteps |= 1; cb() }, 15) } },
-    { name: 'step2', start: (cb) => { setTimeout(() => { completedSteps |= 2; cb() }, 10) } },
+  const sas = startAndStop.new(
     [
-      { name: 'step3', start: runStep3 }    
-    ],
-    { name: 'step4', start: (cb) => { t.equal(completedSteps, 1 + 2 + 4); setTimeout(() => { completedSteps |= 8; cb() }, 45) } },
-    { name: 'step5', start: (cb) => { t.equal(completedSteps, 1 + 2 + 4); setTimeout(() => { completedSteps |= 16; cb() }, 40) } },
-  ])
+      { name: 'step1', start: (cb) => { setTimeout(() => { completedSteps |= 1; cb() }, 15) } },
+      { name: 'step2', start: (cb) => { setTimeout(() => { completedSteps |= 2; cb() }, 10) } },
+      [
+        { name: 'step3', start: runStep3 }    
+      ],
+      { name: 'step4', start: (cb) => { t.equal(completedSteps, 1 + 2 + 4); setTimeout(() => { completedSteps |= 8; cb() }, 45) } },
+      { name: 'step5', start: (cb) => { t.equal(completedSteps, 1 + 2 + 4); setTimeout(() => { completedSteps |= 16; cb() }, 40) } },
+    ]
+  )
   
   function runStep3(cb) {
     t.equal(completedSteps, 1 + 2)
@@ -259,4 +261,23 @@ test('errors stop execution of next steps', (t) => {
   })
 
   sas.on('error', () => {})
+})
+
+test('when started stop is delayed until stop if completed', (t) => {
+  t.plan(1)
+
+  let startCalled = false
+
+  /* eslint-disable no-bitwise */
+  const sas = startAndStop.new(
+    [
+      { name: 'step1', start: (cb) => { setTimeout(cb, 50) } },
+    ]
+  )
+  
+  sas.start(() => { startCalled = true })
+
+  sas.stop(() => {
+    t.ok(startCalled)
+  })
 })

@@ -46,7 +46,6 @@ export default class StartAndStop extends events.EventEmitter {
 
   _run(steps:Steps, functionName:string, finishEventName:string, cb:RunCallback) {
     this._runSteps(steps, functionName, finishEventName, (error) => {
-      
       if (error) {
         this.emit('error', error)        
         this.emit(`${functionName}-error`, error)
@@ -161,6 +160,10 @@ export default class StartAndStop extends events.EventEmitter {
           runStepsCallback()
         }
       })
+    }
+
+    function hallo() : number {
+      return 'test'
     }
   }
 }

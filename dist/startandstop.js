@@ -48,7 +48,6 @@ class StartAndStop extends events.EventEmitter {
 
   _run(steps      , functionName       , finishEventName       , cb            ) {
     this._runSteps(steps, functionName, finishEventName, (error) => {
-      
       if (error) {
         this.emit('error', error);        
         this.emit(`${functionName}-error`, error);
@@ -164,6 +163,8 @@ class StartAndStop extends events.EventEmitter {
         }
       });
     }
+
+    
   }
 }
 
