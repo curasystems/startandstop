@@ -82,11 +82,12 @@ test('run stop functions when stopping again ', (t) => {
   ])
 
   function step(cb) {
+    t.comment('executed start step')
     cb()
   }
 
   function stopStep(cb) {
-    t.pass()
+    t.pass('executed stop step')
     cb()
   }
 
@@ -94,6 +95,41 @@ test('run stop functions when stopping again ', (t) => {
     sas.stop( () => {
       t.pass('stopped')
     })
+  })
+})
+
+
+test('emit error when a step emits an error', (t) => {
+  t.plan(6)
+
+  const sas = startAndStop.new([
+    { name: 'step1', start: step, stop: stopStep },
+    { name: 'step2', start: failingStep, stop: stopStep },
+    { name: 'step3', start: step, stop: stopStep } 
+  ])
+
+  function step(cb) {
+    t.comment('executed start step')
+    setImmediate(cb)
+  }
+
+  function failingStep(cb) {
+    t.pass('executed failing step')
+    setTimeout(() => cb('something wrong'),10)
+  }
+
+  function stopStep(cb) {
+    t.fail('should not be called')
+    cb()
+  }
+
+  sas.start( (err) => {
+    t.notLooseEqual(err, null, 'start should have failed')
+    t.equals( err.failure.step.name, 'step2' )
+    t.equals( err.failure.error, 'something wrong' )
+   
+    t.equals( err.failures.length, 1 )
+    t.deepEqual( err.failures[0].step,  err.failure.step )
   })
 })
 

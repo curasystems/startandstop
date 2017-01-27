@@ -33,17 +33,34 @@ module.exports = class StartAndStop extends events.EventEmitter {
     const nextStepsInParallel = config
 
     let stepsInProgress = nextStepsInParallel.length
+    const failures = []
 
     nextStepsInParallel.forEach((step) => {
       // this.emit(`starting-${step.name}`)
       const fn = step[functionName]
 
       if (fn) {
-        fn((err) => {
+        fn((error) => {
+
+          if (error) {
+            failures.push( { error, step } )
+          }
+
           stepsInProgress--
 
           if (stepsInProgress == 0) {
-            setImmediate(cb)
+            setImmediate(() => {
+              
+              if (failures.length>0) {
+                const error = {
+                  failure: failures[0],
+                  failures: failures
+                }
+                cb(error)
+              } else {
+                cb()
+              }
+            })
           }
         })
       }
