@@ -29,7 +29,8 @@ class StartAndStop extends events.EventEmitter {
                
               
                
-                
+              
+
               
 
   static new(config      ) {
@@ -46,55 +47,44 @@ class StartAndStop extends events.EventEmitter {
   }
 
   start(cb            ) {
-    if (this.started) {
-      throw new Error('Already started')
-    }
-
-    if (this.starting) {
-      this.once('started', cb);
-      return
-    }
-
-    if (this.stopping) {
-      this.once('run-completed', () => {
-        this.start(cb);
-      });
-      return
-    }
-
-    this.starting = true;
     this.stopped = false;
-    this._run(this.config, 'start', 'started', (error) => {
-      this.starting = false;
-      this.started = error == null;
-
-      if (cb) {
-        cb(error);
-      }
-    });
+    this._runGuard(this.config, 'stopping', 'starting', 'start', 'started', cb);
   }
 
   stop(cb            ) {
-    if (this.stopped) {
-      throw new Error('Already stopped')
+    this.started = false;
+    this._runGuard(this.config, 'starting', 'stopping', 'stop', 'stopped', cb);
+  }
+
+  _runGuard(steps      ,
+    alternate       ,
+    progressVar       ,
+    functionName       ,
+    finishEventName       ,
+    cb            ) {
+    const indexableThis                       = this;
+
+    if (indexableThis[finishEventName]) {
+      throw new Error(`Already ${finishEventName}`)
     }
 
-    if (this.stopping) {
-      this.once('stopped', cb);
+    if (indexableThis[progressVar]) {
+      this.once(finishEventName, cb);
       return
     }
 
-    if (this.starting) {
+    if (indexableThis[alternate]) {
       this.once('run-completed', () => {
-        this.stop(cb);
+        const fn          = indexableThis[functionName];
+        fn.call(this, cb);
       });
       return
     }
     
-    this.stopping = true;
-    this._run(this.config, 'stop', 'stopped', (error) => {
-      this.stopping = false;
-      this.stopped = error == null;
+    indexableThis[progressVar] = true;
+    this._run(this.config, functionName, finishEventName, (error) => {
+      indexableThis[progressVar] = false;
+      indexableThis[finishEventName] = error == null;
 
       if (cb) {
         cb(error);
