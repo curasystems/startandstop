@@ -2,7 +2,7 @@
 
 const events = require('events');
 
-module.exports = class StartAndStop extends events.EventEmitter {
+class StartAndStop extends events.EventEmitter {
   
             
 
@@ -76,5 +76,7 @@ module.exports = class StartAndStop extends events.EventEmitter {
       });
     }
   }
-};
-//# sourceMappingURL=startandstop.es6.js.map
+}
+
+export default StartAndStop;
+//# sourceMappingURL=startandstop.es.js.map

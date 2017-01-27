@@ -2,46 +2,111 @@
 
 const events = require('events')
 
-module.exports = class StartAndStop extends events.EventEmitter {
-  
-  config:any
+type Steps = Array<Step|Steps>
 
-  static new(config) {
+declare interface Step {
+  name: string;
+  start?: Function;
+  stop?: Function;
+}
+
+declare interface StepExecutionError {
+  step: Step;
+  error: any;
+}
+
+declare interface ExecutionError {
+  failure:StepExecutionError;
+  failures:StepExecutionError[];
+}
+
+declare function RunCallback(error?:ExecutionError): void;
+
+export default class StartAndStop extends events.EventEmitter {
+  
+  config:Steps
+
+  static new(config:Steps) {
     return new StartAndStop(config)
   }
   
-  constructor(config:any) {
+  constructor(config:Steps) {
     super()
 
     this.config = config
   }
 
-  start(cb:Function) {
+  start(cb:RunCallback) {
     this._run(this.config, 'start', 'started', cb)
   }
 
-  stop(cb:Function) {
+  stop(cb:RunCallback) {
     this._run(this.config, 'stop', 'stopped', cb)
   }
 
-  _run(config:any, functionName:string, finishEventName:string, cb:Function) {
-    this._runNextStepsInParallel(this.config, functionName, (err) => {
+  _run(steps:Steps, functionName:string, finishEventName:string, cb:RunCallback) {
+    this._runSteps(steps, functionName, (error) => {
       this.emit(finishEventName)
-      if (cb) {
-        cb(err)
+      setImmediate(() => {
+        if (cb) {
+          cb(error)
+        }
+      })
+    })
+  }
+    
+  _runSteps(steps:Steps, functionName:string, cb:RunCallback) {
+    const nextParallelSteps = this._gatherParallelSteps(steps)
+    const remainingSteps = steps.slice(nextParallelSteps.length)  
+
+    this._runNextStepsInParallel(nextParallelSteps, functionName, (error) => {
+      if (remainingSteps.length > 0) {
+        const subSteps:Steps = (remainingSteps[0]:any)
+        const subsequentSteps = remainingSteps.slice(1)
+        
+        this._runSteps(subSteps, functionName, (innerStepsError) => {
+          if (innerStepsError) {
+            cb(innerStepsError)
+            return
+          }
+          this._runSteps(subsequentSteps, functionName, cb)
+        })
+      } else {
+        cb(error)
       }
     })
   }
 
-  _runNextStepsInParallel(config:any, functionName:string, runStepsCallback:Function) {
+  _gatherParallelSteps(steps:Steps) : Step[] {
+    const stepsForParallelExecution:Step[] = []
+
+    for (let i = 0; i < steps.length; i += 1) {
+      const step:any = steps[i]
+
+      if (Array.isArray(step)) {
+        break
+      }
+
+      stepsForParallelExecution.push(step)
+    }
+
+    return stepsForParallelExecution
+  }
+
+  _runNextStepsInParallel(config:Step[], functionName:string, runStepsCallback:RunCallback) {
     const nextStepsInParallel = config
 
     let stepsInProgress = nextStepsInParallel.length
-    const failures = []
+    const failures:StepExecutionError[] = []
+
+    if (stepsInProgress === 0) {
+      setImmediate(runStepsCallback)
+      return
+    }
 
     nextStepsInParallel.forEach((step) => {
       // this.emit(`starting-${step.name}`)
-      const fn = step[functionName]
+      const fn:Function = (step:any)[functionName]
 
       if (fn) {
         setImmediate(() => {
@@ -50,9 +115,9 @@ module.exports = class StartAndStop extends events.EventEmitter {
       }
     })
 
-    function onStepFinished(error, step) {
+    function onStepFinished(error, step:Step) {
       if (error) {
-        failures.push({ error, step })
+        failures.push({ step, error })
       }
 
       stepsInProgress -= 1

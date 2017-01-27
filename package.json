@@ -5,10 +5,10 @@
   "main": "dist/startandstop.js",
   "module": "dist/startandstop.es6.js",
   "scripts": {
-    "build": "npm run build:cjs && npm run build:es6",
-    "build:watch": "nodemon -w src -x npm run build",
-    "build:cjs": "rollup -c -o dist/startandstop.js -f cjs",
-    "build:es6": "rollup -c -o dist/startandstop.es6.js -f es",
+    "build": "rimraf dist && npm run build:cjs && npm run build:es6",
+    "build:watch": "rimraf dist && rollup --watch -c -o dist/startandstop.js -f iife",
+    "build:cjs": "rollup -c -o dist/startandstop.js -f iife",
+    "build:es": "rollup -c -o dist/startandstop.es.js -f es",
     "test": "npm run lint && npm run flow && npm run test:unit | faucet",
     "test:unit": "tape test/**.spec.js",
     "test:unit:watch": "nodemon -w test -w dist/startandstop.js -d 1 -x npm run test:unit",
@@ -37,8 +37,10 @@
     "eslint-plugin-import": "^2.2.0",
     "faucet": "^0.0.1",
     "flow-bin": "^0.38.0",
+    "rimraf": "^2.5.4",
     "rollup": "^0.41.4",
     "rollup-plugin-flow": "^1.1.1",
+    "rollup-watch": "^3.2.2",
     "tape": "^4.6.3"
   }
 }

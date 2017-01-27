@@ -21,7 +21,7 @@ test('New it and run with normal async functions run in parallel', (t) => {
 })
 
 test('start callback called after all steps completed ', (t) => {
-  t.plan(1)
+  t.plan(2)
 
   let completedSteps = 0
 
@@ -36,8 +36,114 @@ test('start callback called after all steps completed ', (t) => {
   sas.start(() => {
     t.equal(completedSteps, 1 + 2 + 4)
   })
+
+  t.equal(completedSteps, 0)
 })
 
+
+test('a new array signals a new section to run after previous steps ', (t) => {
+  t.plan(3)
+
+  let completedSteps = 0
+
+  /* eslint-disable no-bitwise */
+  const sas = startAndStop.new([
+    { name: 'step1', start: (cb) => { setTimeout(() => { completedSteps |= 1; cb() }, 15) } },
+    { name: 'step2', start: (cb) => { setTimeout(() => { completedSteps |= 2; cb() }, 10) } },
+    [
+      { name: 'step3', start: runStep3 }    
+    ]
+  ])
+  
+
+  function runStep3(cb) {
+    t.equal(completedSteps, 1 + 2)
+    completedSteps |= 4
+    cb()
+  }
+  /* eslint-enable */
+
+  sas.start(() => {
+    t.equal(completedSteps, 1 + 2 + 4)
+  })
+
+  t.equal(completedSteps, 0)
+})
+
+test('execution continous AFTER the array again', (t) => {
+  t.plan(5)
+
+  let completedSteps = 0
+
+  /* eslint-disable no-bitwise */
+  const sas = startAndStop.new([
+    { name: 'step1', start: (cb) => { setTimeout(() => { completedSteps |= 1; cb() }, 15) } },
+    { name: 'step2', start: (cb) => { setTimeout(() => { completedSteps |= 2; cb() }, 10) } },
+    [
+      { name: 'step3', start: runStep3 }    
+    ],
+    { name: 'step4', start: (cb) => { t.equal(completedSteps, 1 + 2 + 4); setTimeout(() => { completedSteps |= 8; cb() }, 45) } },
+    { name: 'step5', start: (cb) => { t.equal(completedSteps, 1 + 2 + 4); setTimeout(() => { completedSteps |= 16; cb() }, 40) } },
+  ])
+  
+  function runStep3(cb) {
+    t.equal(completedSteps, 1 + 2)
+    setTimeout(() => {
+      completedSteps |= 4
+      cb()
+    }, 20)
+  }
+  /* eslint-enable */
+
+  sas.start(() => {
+    t.equal(completedSteps, 1 + 2 + 4 + 8 + 16)
+  })
+
+  t.equal(completedSteps, 0)
+})
+
+test('execution can be nested', (t) => {
+  t.plan(6)
+
+  let completedSteps = 0
+
+  /* eslint-disable no-bitwise */
+  const sas = startAndStop.new([
+    { name: 'step1', start: (cb) => { setTimeout(() => { completedSteps |= 1; cb() }, 15) } },
+    { name: 'step2', start: (cb) => { setTimeout(() => { completedSteps |= 2; cb() }, 10) } },
+    [
+      { name: 'step3', start: runStep3 },
+      [
+        { name: 'step3s', start: runStep3s }    
+      ],
+    ],
+    { name: 'step4', start: (cb) => { t.equal(completedSteps, 1 + 2 + 4 + 128); setTimeout(() => { completedSteps |= 8; cb() }, 45) } },
+    { name: 'step5', start: (cb) => { t.equal(completedSteps, 1 + 2 + 4 + 128); setTimeout(() => { completedSteps |= 16; cb() }, 40) } },
+  ])
+  
+  function runStep3(cb) {
+    t.equal(completedSteps, 1 + 2)
+    setTimeout(() => {
+      completedSteps |= 4
+      cb()
+    }, 20)
+  }
+
+  function runStep3s(cb) {
+    t.equal(completedSteps, 1 + 2 + 4)
+    setTimeout(() => {
+      completedSteps |= 128
+      cb()
+    }, 10)
+  }
+  /* eslint-enable */
+
+  sas.start(() => {
+    t.equal(completedSteps, 1 + 2 + 4 + 8 + 16 + 128)
+  })
+
+  t.equal(completedSteps, 0)
+})
 
 test('start callback called after all steps completed asynchronously ', (t) => {
   t.plan(1)

@@ -15,7 +15,8 @@ module.exports = {
         "linebreak-style": [0],
         "class-methods-use-this": [0],
         "max-len": [1],
-        "comma-dangle": [0]
+        "comma-dangle": [0],
+        "flowtype/define-flow-type": [1]
     },
     "globals": {
     }
