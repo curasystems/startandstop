@@ -2,11 +2,13 @@
   "name": "startandstop",
   "version": "1.0.0",
   "description": "Safely perform sync and async steps when starting and stopping servers",
-  "main": "index.js",
+  "main": "lib/index.js",
   "scripts": {
     "test": "npm test:unit | faucet",
     "test:unit": "tape test/**.spec.js",
-    "test:unit:watch": "nodemon -x npm run test:unit"
+    "test:unit:watch": "nodemon -x npm run test:unit",
+    "lint": "eslint lib test",
+    "flow": "flow check"
   },
   "keywords": [
     "start",
@@ -24,7 +26,12 @@
   "license": "MIT",
   "devDependencies": {
     "babel-eslint": "^7.1.1",
+    "eslint": "^3.14.1",
+    "eslint-config-airbnb-base": "^11.0.1",
+    "eslint-plugin-flowtype": "^2.30.0",
+    "eslint-plugin-import": "^2.2.0",
     "faucet": "^0.0.1",
+    "flow-bin": "^0.38.0",
     "tape": "^4.6.3"
   }
 }

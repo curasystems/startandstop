@@ -1,5 +1,4 @@
 const test = require('tape')
-const util = require('util')
 const startAndStop = require('..')
 
 test('New it and run with normal async functions run in parallel', (t) => {
@@ -15,9 +14,9 @@ test('New it and run with normal async functions run in parallel', (t) => {
     t.pass('start completed')
   })
 
-  function step(cb){
+  function step(cb) {
     t.pass('called step')
-    setTimeout(cb,1)
+    setTimeout(cb, 1)
   }
 })
 
@@ -33,7 +32,7 @@ test('start callback called after all steps completed ', (t) => {
   ])
 
   sas.start(() => {
-    t.equal( completedSteps, 1 + 2 + 4 )
+    t.equal(completedSteps, 1 + 2 + 4)
   })
 })
 
@@ -43,13 +42,13 @@ test('start callback called after all steps completed asynchronously ', (t) => {
   let completedSteps = 0
 
   const sas = startAndStop.new([
-    { name: 'step1', start: (cb) => { setTimeout( ()=>{ completedSteps += 1; cb() } ,10) } },
-    { name: 'step2', start: (cb) => { completedSteps += 2; setImmediate(cb) } },
-    { name: 'step3', start: (cb) => { completedSteps += 4; setImmediate(cb) } }    
+    { name: 'step1', start: (cb) => { setTimeout(() => { completedSteps += 1; cb() }, 10) } },
+    { name: 'step2', start: (cb) => { completedSteps += 2; cb() } },
+    { name: 'step3', start: (cb) => { completedSteps += 4; cb() } }    
   ])
 
   sas.start(() => {
-    t.equal( completedSteps, 1 + 2 + 4 )
+    t.equal(completedSteps, 1 + 2 + 4)
   })
 })
 
@@ -59,7 +58,7 @@ test('emit started event when started ', (t) => {
   let completedSteps = 0
 
   const sas = startAndStop.new([
-    { name: 'step1', start: (cb) => { setTimeout( ()=>{ completedSteps += 1; cb() } ,10) } },
+    { name: 'step1', start: (cb) => { setTimeout(() => { completedSteps += 1; cb() }, 10) } },
     { name: 'step2', start: (cb) => { completedSteps += 2; setImmediate(cb) } },
     { name: 'step3', start: (cb) => { completedSteps += 4; setImmediate(cb) } }    
   ])
@@ -67,7 +66,7 @@ test('emit started event when started ', (t) => {
   sas.start()
 
   sas.on('started', () => {
-    t.equal( completedSteps, 1 + 2 + 4 )
+    t.equal(completedSteps, 1 + 2 + 4)
   })
 })
 
@@ -91,8 +90,8 @@ test('run stop functions when stopping again ', (t) => {
     cb()
   }
 
-  sas.start( () => {
-    sas.stop( () => {
+  sas.start(() => {
+    sas.stop(() => {
       t.pass('stopped')
     })
   })
@@ -115,7 +114,7 @@ test('emit error when a step emits an error', (t) => {
 
   function failingStep(cb) {
     t.pass('executed failing step')
-    setTimeout(() => cb('something wrong'),10)
+    setTimeout(() => cb('something wrong'), 10)
   }
 
   function stopStep(cb) {
@@ -123,13 +122,13 @@ test('emit error when a step emits an error', (t) => {
     cb()
   }
 
-  sas.start( (err) => {
+  sas.start((err) => {
     t.notLooseEqual(err, null, 'start should have failed')
-    t.equals( err.failure.step.name, 'step2' )
-    t.equals( err.failure.error, 'something wrong' )
+    t.equals(err.failure.step.name, 'step2')
+    t.equals(err.failure.error, 'something wrong')
    
-    t.equals( err.failures.length, 1 )
-    t.deepEqual( err.failures[0].step,  err.failure.step )
+    t.equals(err.failures.length, 1)
+    t.deepEqual(err.failures[0].step, err.failure.step)
   })
 })
 
