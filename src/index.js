@@ -37,13 +37,17 @@ export default class StartAndStop extends events.EventEmitter {
   constructor(config:Steps) {
     super()
 
-    this.starting = this.stopping = this.started = null
+    this.starting = this.stopping = this.started = false
     this.stopped = true
 
     this.config = config
   }
 
   start(cb:RunCallback) {
+    if (this.started) {
+      throw new Error('Already started')
+    }
+
     if (this.starting) {
       this.once('started', cb)
       return
@@ -57,6 +61,7 @@ export default class StartAndStop extends events.EventEmitter {
     }
 
     this.starting = true
+    this.stopped = false
     this._run(this.config, 'start', 'started', (error) => {
       this.starting = false
       this.started = error == null
@@ -68,6 +73,10 @@ export default class StartAndStop extends events.EventEmitter {
   }
 
   stop(cb:RunCallback) {
+    if (this.stopped) {
+      throw new Error('Already stopped')
+    }
+
     if (this.stopping) {
       this.once('stopped', cb)
       return
@@ -92,18 +101,20 @@ export default class StartAndStop extends events.EventEmitter {
   }
 
   _run(steps:Steps, functionName:string, finishEventName:string, cb:RunCallback) {
-    this._runSteps(steps, functionName, finishEventName, (error) => {
-      if (error) {
-        this.emit('error', error)        
-        this.emit(`${functionName}-error`, error)
-      } else {
-        this.emit(finishEventName, error)
-      }
-      
-      cb(error)
+    setImmediate(() => {
+      this._runSteps(steps, functionName, finishEventName, (error) => {
+        if (error) {
+          this.emit('error', error)        
+          this.emit(`${functionName}-error`, error)
+        } else {
+          this.emit(finishEventName, error)
+        }
+        
+        cb(error)
 
-      setImmediate(() => {
-        this.emit('run-completed', error)
+        setImmediate(() => {
+          this.emit('run-completed', error)
+        })
       })
     })
   }

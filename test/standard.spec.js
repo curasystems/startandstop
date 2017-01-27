@@ -281,3 +281,41 @@ test('when started stop is delayed until stop if completed', (t) => {
     t.ok(startCalled)
   })
 })
+
+test('when started called twice steps executed once only', (t) => {
+  t.plan(2)
+
+  /* eslint-disable no-bitwise */
+  const sas = startAndStop.new(
+    [
+      { name: 'step1', start: (cb) => { setTimeout(cb, 50) } },
+    ]
+  )
+  
+  /* eslint-disable no-bitwise */
+  sas.start(() => {
+    t.pass('should be called')
+  })
+
+  sas.start(() => {
+    t.pass('should be called')
+  })
+})
+
+test('when started already raises exception', (t) => {
+  t.plan(1)
+
+  /* eslint-disable no-bitwise */
+  const sas = startAndStop.new(
+    [
+      { name: 'step1', start: (cb) => { setTimeout(cb, 50) } },
+    ]
+  )
+
+  sas.start()
+  
+  /* eslint-disable no-bitwise */
+  t.throws(() => {
+    sas.start()
+  })
+})

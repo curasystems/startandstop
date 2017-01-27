@@ -39,13 +39,17 @@ class StartAndStop extends events.EventEmitter {
   constructor(config      ) {
     super();
 
-    this.starting = this.stopping = this.started = null;
+    this.starting = this.stopping = this.started = false;
     this.stopped = true;
 
     this.config = config;
   }
 
   start(cb            ) {
+    if (this.started) {
+      throw new Error('Already started')
+    }
+
     if (this.starting) {
       this.once('started', cb);
       return
@@ -59,6 +63,7 @@ class StartAndStop extends events.EventEmitter {
     }
 
     this.starting = true;
+    this.stopped = false;
     this._run(this.config, 'start', 'started', (error) => {
       this.starting = false;
       this.started = error == null;
@@ -70,6 +75,10 @@ class StartAndStop extends events.EventEmitter {
   }
 
   stop(cb            ) {
+    if (this.stopped) {
+      throw new Error('Already stopped')
+    }
+
     if (this.stopping) {
       this.once('stopped', cb);
       return
@@ -94,18 +103,20 @@ class StartAndStop extends events.EventEmitter {
   }
 
   _run(steps      , functionName       , finishEventName       , cb            ) {
-    this._runSteps(steps, functionName, finishEventName, (error) => {
-      if (error) {
-        this.emit('error', error);        
-        this.emit(`${functionName}-error`, error);
-      } else {
-        this.emit(finishEventName, error);
-      }
-      
-      cb(error);
+    setImmediate(() => {
+      this._runSteps(steps, functionName, finishEventName, (error) => {
+        if (error) {
+          this.emit('error', error);        
+          this.emit(`${functionName}-error`, error);
+        } else {
+          this.emit(finishEventName, error);
+        }
+        
+        cb(error);
 
-      setImmediate(() => {
-        this.emit('run-completed', error);
+        setImmediate(() => {
+          this.emit('run-completed', error);
+        });
       });
     });
   }
