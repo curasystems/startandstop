@@ -374,7 +374,6 @@ test.only('stop tests are executed in reverse order', (t) => {
   })
 
   sas.on('step-stopped', (step) => {
-    console.log( 'stopped', step.name )
     const nextExpectedStep = expectedSteps.shift()
     t.equal(step.name, nextExpectedStep)
   })
