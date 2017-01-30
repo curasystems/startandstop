@@ -196,6 +196,7 @@ class StartAndStop extends events.EventEmitter {
       }
 
       setImmediate(() => {
+        self.emit('step', step);
         this.emit(`step-${functionName}-begin`, step);
 
         const thisInstanceForStepFunction = step.this || this;
