@@ -342,7 +342,7 @@ test('step functions can be bound to an instance', (t) => {
   sas.start()
 })
 
-test.only('stop tests are executed in reverse order', (t) => {
+test('stop tests are executed in reverse order', (t) => {
   t.plan(7)
 
   const expectedSteps = ['step5', 'step4', 'step3s', 'step3', 'step2', 'step1']
