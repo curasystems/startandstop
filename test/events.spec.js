@@ -22,7 +22,7 @@ test('start events emitted after all steps completed', (t) => {
 })
 
 test('a number of events raised per step', (t) => {
-  t.plan(3 * 3)
+  t.plan(3 * 4)
 
   /* eslint-disable no-bitwise */
   const sas = startAndStop.new([
@@ -42,6 +42,10 @@ test('a number of events raised per step', (t) => {
     t.pass(`step-start-end raised ${step.name}`)
   })
   
+  sas.on('step', (step) => {
+    t.pass(`step raised ${step.name}`)
+  })
+
   sas.on('step-started', (step) => {
     t.pass(`step-started raised ${step.name}`)
   })

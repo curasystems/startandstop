@@ -208,6 +208,7 @@ export default class StartAndStop extends events.EventEmitter {
 
     function onStepFinished(error, step:Step) {
       self.emit(`step-${functionName}-end`, step)
+      self.emit('step', step, error)
       
       if (error) {
         failures.push({ step, error })
